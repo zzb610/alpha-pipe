@@ -552,5 +552,7 @@ class FormulaTest(BaseTest):
             instruments = D.instruments(market=self._market)
             factors_ret = D.features(instruments=instruments,fields=([self._factor_exp,'$group'] + [ret_exp for ret_exp in self._ret_exps]),start_time=self._start_time, end_time=self._end_time)
             factors_ret.columns = ['factor','group'] + ['return({})'.format(ret_type) for ret_type in self._ret_types]
+            factors_ret = factors_ret.dropna()
+            # display(factors_ret)
             self._factor_data = qlib_to_alphalens(factors_ret, self._quantile)
         return self._factor_data
