@@ -552,5 +552,17 @@ class FormulaTest(BaseTest):
             factors_ret.columns = ['factor','group'] + ['return({})'.format(ret_type) for ret_type in self._ret_types]
             factors_ret = factors_ret.dropna()
             # display(factors_ret)
-            self._factor_data = qlib_to_alphalens(factors_ret, self._quantile)
+
+            try_num = 0
+            while try_num < 10:
+                try:
+                    self._factor_data = qlib_to_alphalens(factors_ret, self._quantile)
+                    break
+                except ValueError:
+                    self._quantile -= 1
+                    print('分层数过多!!!尝试减少分层数到{}, 尝试第{}次'.format(self._quantile, try_num + 1))
+                try_num += 1
+
         return self._factor_data
+
+ 
