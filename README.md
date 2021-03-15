@@ -25,7 +25,7 @@ source venv/bin/activate
 #### 安装所需库
 
 ```shell
-pip install -r requirements.txt -i  \https://pypi.douban.com/simple/
+pip install -r requirements.txt -i https://pypi.douban.com/simple/
 ```
 
 #### 编译pyx
