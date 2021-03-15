@@ -18,8 +18,17 @@ python -m venv venv
 
 激活环境
 
+linux
+
 ```shell
 source venv/bin/activate
+```
+
+windows
+
+```
+cd venv/Scripts
+./activate
 ```
 
 #### 安装所需库
