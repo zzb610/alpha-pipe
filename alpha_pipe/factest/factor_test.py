@@ -543,7 +543,7 @@ class FormulaTest(BaseTest):
         self._by_group = by_group
 
         qlib.init(provider_uri=provider_uri, region=region)
-        
+        ''
 
     def factor_data(self):
         if self._factor_data is None:
