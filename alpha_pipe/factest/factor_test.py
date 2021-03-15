@@ -519,8 +519,6 @@ def qlib_to_alphalens(qlib_factor_data, quantile):
     factor_data['group'] = factor_data['group'].apply(int).apply(str)
     return factor_data
 
-
-
 class FormulaTest(BaseTest):
         
     def __init__(self, market, start_time, end_time, peroids: Tuple, quantile, factor_exp, ret_exps: Tuple,ret_types: Tuple,provider_uri, region, equal_weighted=True, long_short=False, group_neutral = False, by_group=False):

@@ -12,24 +12,27 @@ except Exception as e:
 from alpha_pipe.factest.factor_test import FormulaTest
 from alpha_pipe.qlib import config
 from alpha_pipe.qlib.config import REG_CN
-#  def __init__(self, market, start_time, end_time, peroids: Tuple, quantile, factor_exp, ret_exps: Tuple,ret_types: Tuple,provider_uri, region, equal_weighted=True, long_short=False, group_neutral = False, by_group=False):
+
+# %%
 config = {
     'market':'all',
-    'start_time':'2018-01-01',
+    'start_time':'2017-01-01',
     'end_time':'2020-01-01',
     'peroids':(1,1),
     'quantile':10,
-    # 'factor_exp':'Ref(Mean(Ref($close_10, -1) / $close_230 - 1, 20), 1)',
     'factor_exp':'Ref(Mean(Ref($close_10, -1) / $close_230 - 1, 20), 1)',
     'ret_exps':['Ref($close_10, -1) / $close_230 - 1', 'Ref($close_20, -1) / $close_230 - 1'],
-    'ret_types':['ret1', 'ret2'],
-    'provider_uri':'./data/bin',
+    'ret_types':['9:40 to 14:50', '9:50 to 14:50'],
+    'provider_uri':'./data/bin_data',
     'region':REG_CN
 }
 tester = FormulaTest(**config)
 # %%
+# 收益分析
 tester.return_analysis()
+# ic分析
 tester.information_analysis()
+# 换手分析
 tester.turnover_analysis() 
 # %%
 
@@ -103,6 +106,5 @@ tester.plot_factor_rank_auto_correlation()
 
 # 因子值
 tester.factor_data()
-# %%
-
+ 
 # %%
