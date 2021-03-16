@@ -505,18 +505,18 @@ import alpha_pipe.qlib as qlib
 from alpha_pipe.qlib.data import D
 
 
-def qcut_by_date(group, q):
-    group['factor_quantile'] = pd.qcut(group['factor'], q, labels=False) + 1
+def qcut_by_date(group, q, duplicates):
+    group['factor_quantile'] = pd.qcut(group['factor'], q, labels=False, duplicates=duplicates) + 1
     return group
 
-def qlib_to_alphalens(qlib_factor_data, quantile):
-    # from IPython.display import display
-    # display(qlib_factor_data)
+def qlib_to_alphalens(qlib_factor_data, quantile, duplicates):
+    
     factor_data = qlib_factor_data.reset_index().rename(columns={'datetime':'date','instrument':'asset'})
-    factor_data = factor_data.groupby('date').apply(qcut_by_date, q=quantile)
+    factor_data = factor_data.groupby('date').apply(qcut_by_date, q=quantile, duplicates=duplicates)
     factor_data = factor_data.sort_values(by=['date','asset']).set_index(['date','asset'])
     factor_data = factor_data.dropna()
     factor_data['group'] = factor_data['group'].apply(int).apply(str)
+    
     return factor_data
 
 class FormulaTest(BaseTest):
@@ -543,7 +543,7 @@ class FormulaTest(BaseTest):
         self._by_group = by_group
 
         qlib.init(provider_uri=provider_uri, region=region)
-        ''
+        
 
     def factor_data(self):
         if self._factor_data is None:
@@ -551,14 +551,13 @@ class FormulaTest(BaseTest):
             factors_ret = D.features(instruments=instruments,fields=([self._factor_exp,'$group'] + [ret_exp for ret_exp in self._ret_exps]),start_time=self._start_time, end_time=self._end_time)
             factors_ret.columns = ['factor','group'] + ['return({})'.format(ret_type) for ret_type in self._ret_types]
             factors_ret = factors_ret.dropna()
-            # display(factors_ret)
-
             try_num = 0
             while try_num < 10:
                 try:
-                    self._factor_data = qlib_to_alphalens(factors_ret, self._quantile)
+                    self._factor_data = qlib_to_alphalens(factors_ret, self._quantile, duplicates='raise')
                     break
-                except ValueError:
+                except ValueError as e:
+                    # print(e)
                     self._quantile -= 1
                     print('分层数过多!!!尝试减少分层数到{}, 尝试第{}次'.format(self._quantile, try_num + 1))
                 try_num += 1

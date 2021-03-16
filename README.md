@@ -60,7 +60,38 @@ python setup.py build_ext --inplace
 
 #### 基础算子
 
-![](docs/op1.jpg)
+<!-- ![](docs/op1.jpg)
 ![](docs/op2.jpg)
 ![](docs/op3.jpg)
-![](docs/op4.jpg)
+![](docs/op4.jpg) -->
+
+- "> >= < <= == !="
+- "+ - * /"
+- "& |": and or
+- Not: Not Operator
+- Abs: Feature Absolute Value
+- Sign: Feature Sign
+- Log: Feature Log
+- Power: Feature Power
+- If: If($close>$open, $close, $open)
+- Ref: Feature Reference, 类似pandas shift Ref($close, -1) 下一天的收盘价
+- Mean: Rolling Mean (MA) Mean($close, 5)
+- Sum: Rolling Sum Sum($close, 5)
+- Std: Rolling Std. Std($close, 5)
+- Var: Rolling Variance. Var($close, 5)
+- Skew: Rolling Skewness. Skew($close, 10)
+- Kurt: Rolling Kurtosis($close 10)
+- Max: Rolling Max. Max($close, 10)
+- IdxMax: Rolling Max Index. IdxMax($close, 10)
+- IdxMin: Rolling Min Index. IdxMin($close, 10)
+- Min: Rolling Min. Min($close, 10)
+- Quantile: Rolling Quantile. Quantile($close, 10, 5) 过去十天 五分层
+- Med: Rolling Median. Med($close, 10)
+- Mad: Rolling Mean Absolute Deviation. Mad($close, 10)\
+- Rank: Rolling Rank (Percentile). Rank($close, 10)
+- Count: rolling count of number of non-NaN elements
+- Delta: end minus start in rolling window. Delta($close, 10)
+- Slope: linear regression slope of given window. Slope($close, 10)
+- Resi: regression residuals of given window. 
+
+
