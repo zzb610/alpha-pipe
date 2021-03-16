@@ -35,6 +35,7 @@ cd venv/Scripts
 
 ```shell
 pip install -r requirements.txt
+```
 
 #### 编译pyx
 
