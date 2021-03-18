@@ -2,6 +2,10 @@
 
 ## 源码级用户使用说明
 
+### 注意
+
+代码必须在bin目录下运行
+
 ### 下载
 
 直接从github下载源码包即可(**zzb分支!!!!!!!**)
@@ -92,6 +96,28 @@ python setup.py build_ext --inplace
 - Count: rolling count of number of non-NaN elements
 - Delta: end minus start in rolling window. Delta($close, 10)
 - Slope: linear regression slope of given window. Slope($close, 10)
-- Resi: regression residuals of given window. 
+- Resi: regression residuals of given window. Resi($close, 10)
+- WMA: weighted moving average. WMA($close,10)
+- EMA: Exponential Mean. EMA($close, 10)
+- Corr: rolling correlation of two input features. Corr($close, $open, 10)
+- Cov: Rolling Covariance. Cov($close, $open, 10)
 
 
+### 测试设置字段
+
+```python
+config = {
+    'market':'all', # 全市场, 目前指2017-01-01的中证800
+    'start_time':'2017-01-01', # 测试开始日期
+    'end_time':'2019-01-01', # 测试结束日期
+    'peroids':(1, 1), # 收益计算周期
+    'quantile':5, # 分层数
+    'factor_exp': '$open / Ref($close, 1) - 1', # 因子表达式
+    'ret_exps':['$open', 'Ref($close, 1)'], # 收益表达式
+    'ret_types':['open','Ref($close, 1)'], # 收益表达式的名称
+    'provider_uri':'./data/bin_data', # 数据路径
+    'region':REG_CN # 市场的类型, A股
+}
+
+# len(peroids) len(ret_exps) len(ret_types) 必须对应且长度相同!!!!!!
+```
