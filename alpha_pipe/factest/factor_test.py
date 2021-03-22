@@ -574,13 +574,18 @@ def df_to_alphalens(df_factor_data, q, duplicates):
 
 class DFTest(BaseTest):
 
-    def __init__(self, factor_data_df: pd.DataFrame, quantile, periods, ret_types):
+    def __init__(self, factor_data_df: pd.DataFrame, quantile, periods, ret_types, equal_weighted=True, long_short=False, group_neutral = False, by_group=False):
         super().__init__()
 
         self._factor_data_df = factor_data_df
         self._quantile = quantile
         self._periods = periods
         self._ret_types = ret_types
+
+        self._equal_weighted = equal_weighted
+        self._long_short = long_short
+        self._group_neutral = group_neutral
+        self._by_group = by_group
     
     def factor_data(self):
         if self._factor_data is None:

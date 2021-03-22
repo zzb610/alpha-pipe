@@ -17,9 +17,13 @@ from alpha_pipe.qlib.config import REG_CN
 factor_data = ('算好的因子数据')
 config = {
     'factor_data_df': factor_data,
-    'periods':(1,),
+    'periods': (1,),
     'quantile':5,
     'ret_types':['close to close'],
+    'equal_weighted': True,
+    'long_short': False,
+    'group_neutral': False,
+    'by_group': True
 }
 tester = DFTest(**config)
 # %%
