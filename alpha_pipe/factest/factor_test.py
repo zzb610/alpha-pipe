@@ -21,7 +21,7 @@ class BaseTest():
 
         self._factor_data = None
         self._ret_types = None
-        self._peroids = None
+        self._periods = None
 
         self._long_short = None
         self._group_neutral = None
@@ -107,7 +107,7 @@ class BaseTest():
         # )
 
         self._alpha_beta  = perf.factor_alpha_beta(
-            factor_data,self._peroids,self._factor_returns, long_short, group_neutral
+            factor_data,self._periods,self._factor_returns, long_short, group_neutral
         )
 
         self._mean_ret_spread_quant, self._std_spread_quant = perf.compute_mean_returns_spread(
@@ -172,7 +172,7 @@ class BaseTest():
         #     self._turnover_periods = utils.timedelta_strings_to_integers(
         #         self._turnover_periods,)
 
-        self._turnover_periods = self._peroids
+        self._turnover_periods = self._periods
 
         quantile_factor = self.factor_data()["factor_quantile"]
 
@@ -337,10 +337,10 @@ class BaseTest():
                 + ("Long/Short " if self._long_short else "")
                 + "Portfolio Cumulative Return ({})".format(ret_type)
             )
-            period = '{}D'.format(self._peroids[i])
+            period = '{}D'.format(self._periods[i])
             plotting.plot_cumulative_returns(
                 self._factor_returns['return({})'.format(ret_type)], period=period, title=title, ax=gf.next_row(
-                ), freq=str(self._peroids[i]) + 'B'
+                ), freq=str(self._periods[i]) + 'B'
             )
         # gf.close()
 
@@ -442,9 +442,9 @@ class BaseTest():
                 + ("Long/Short " if self._long_short else "")
                 + "Portfolio Cumulative Return ({})".format(ret_type)
             )
-            period = '{}D'.format(self._peroids[i])
+            period = '{}D'.format(self._periods[i])
             plotting.plot_cumulative_returns_by_quantile(
-                self._mean_quant_ret_bydate['return({})'.format(ret_type)], period=period, ax=gf.next_row(), freq=str(self._peroids[i]) + 'B', title=title)
+                self._mean_quant_ret_bydate['return({})'.format(ret_type)], period=period, ax=gf.next_row(), freq=str(self._periods[i]) + 'B', title=title)
         # gf.close()
 
     def plot_quantile_average_cumulative_return(self, std_bar=True):
@@ -521,17 +521,17 @@ def qlib_to_alphalens(qlib_factor_data, quantile, duplicates):
 
 class FormulaTest(BaseTest):
         
-    def __init__(self, market, start_time, end_time, peroids: Tuple, quantile, factor_exp, ret_exps: Tuple,ret_types: Tuple,provider_uri, region, equal_weighted=True, long_short=False, group_neutral = False, by_group=False):
+    def __init__(self, market, start_time, end_time, periods: Tuple, quantile, factor_exp, ret_exps: Tuple,ret_types: Tuple,provider_uri, region, equal_weighted=True, long_short=False, group_neutral = False, by_group=False):
         
         super().__init__()
 
-        assert len(peroids) == len(ret_exps), "len(peroids) must equal len(ret_exps) !"
+        assert len(periods) == len(ret_exps), "len(periods) must equal len(ret_exps) !"
 
         self._market = market
         self._start_time = start_time
         self._end_time = end_time
 
-        self._peroids = peroids
+        self._periods = periods
         self._ret_types = ret_types
 
         self._quantile = quantile
@@ -564,4 +564,35 @@ class FormulaTest(BaseTest):
 
         return self._factor_data
 
- 
+
+def df_to_alphalens(df_factor_data, q, duplicates):
+    factor_data = df_factor_data.groupby('date').apply(qcut_by_date, q, duplicates)
+    factor_data = factor_data.sort_values(by=['date','asset']).set_index(['date','asset'])
+    factor_data = factor_data.dropna()
+    factor_data['group'] = factor_data['group'].apply(int).apply(str)
+    return factor_data
+
+class DFTest(BaseTest):
+
+    def __init__(self, factor_data_df: pd.DataFrame, quantile, periods, ret_types):
+        super().__init__()
+
+        self._factor_data_df = factor_data_df
+        self._quantile = quantile
+        self._periods = periods
+        self._ret_types = ret_types
+    
+    def factor_data(self):
+        if self._factor_data is None:
+            try_num = 0
+            while try_num < 10:
+                try:
+                    self._factor_data = df_to_alphalens(self._factor_data_df, self._quantile, duplicates='raise')
+                    break
+                except ValueError as e:
+                    # print(e)
+                    self._quantile -= 1
+                    print('分层数过多!!!尝试减少分层数到{}, 尝试第{}次'.format(self._quantile, try_num + 1))
+                    try_num += 1
+
+        return self._factor_data

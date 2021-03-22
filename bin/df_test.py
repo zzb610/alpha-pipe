@@ -1,5 +1,6 @@
 # %%
 import traceback
+
 try:
     import os
     import sys
@@ -9,25 +10,20 @@ try:
 except Exception as e:
     traceback.print_exc()
     
-from alpha_pipe.factest.factor_test import FormulaTest
-from alpha_pipe.qlib import config
+from alpha_pipe.factest.factor_test import DFTest
+from alpha_pipe.qlib import config, data
 from alpha_pipe.qlib.config import REG_CN
-
 # %%
+factor_data = ('算好的因子数据')
 config = {
-    'market':'all',
-    'start_time':'2017-01-01',
-    'end_time':'2020-01-01',
-    'periods':(1,1),
-    'quantile':10,
-    'factor_exp':'Ref(Mean(Ref($close_10, -1) / $close_230 - 1, 20), 1)',
-    'ret_exps':['Ref($close_10, -1) / $close_230 - 1', 'Ref($close_20, -1) / $close_230 - 1'],
-    'ret_types':['9:40 to 14:50', '9:50 to 14:50'],
-    'provider_uri':'./data/bin_data',
-    'region':REG_CN
+    'factor_data_df': factor_data,
+    'periods':(1,),
+    'quantile':5,
+    'ret_types':['close to close'],
 }
-tester = FormulaTest(**config)
+tester = DFTest(**config)
 # %%
+
 # 收益分析
 tester.return_analysis()
 # ic分析
@@ -41,7 +37,7 @@ tester.plot_returns_table()
 
 # %%
 
-# 因子加权(目前只支持等权)累积收益
+# 因子加权累积收益
 tester.plot_cumulative_returns()
 
 # %%
@@ -98,13 +94,9 @@ tester.plot_turnover_table()
 tester.plot_top_bottom_quantile_turnover()
 
 # %%
-
 # 因子排序的自相关
 tester.plot_factor_rank_auto_correlation()
-
-# %%
-
-# 因子值
-tester.factor_data()
  
+# %%
+factor_data
 # %%

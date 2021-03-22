@@ -110,7 +110,7 @@ config = {
     'market':'all', # 全市场, 目前指2017-01-01的中证800
     'start_time':'2017-01-01', # 测试开始日期
     'end_time':'2019-01-01', # 测试结束日期
-    'peroids':(1, 1), # 收益计算周期
+    'periods':(1, 1), # 收益计算周期
     'quantile':5, # 分层数
     'factor_exp': '$open / Ref($close, 1) - 1', # 因子表达式
     'ret_exps':['$open', 'Ref($close, 1)'], # 收益表达式
@@ -119,5 +119,13 @@ config = {
     'region':REG_CN # 市场的类型, A股
 }
 
-# len(peroids) len(ret_exps) len(ret_types) 必须对应且长度相同!!!!!!
+# len(periods) len(ret_exps) len(ret_types) 必须对应且长度相同!!!!!!
 ```
+
+### 支持自定义因子数据 (见/bin/df_test.py)
+
+用户将因子值算好并打包为 pandas DataFrame 格式 使用DFTest进行单因子测试
+
+因子的格式必须严格为
+
+![factor_fmt](docs/factor_fmt.jpg)
