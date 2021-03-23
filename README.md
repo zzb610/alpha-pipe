@@ -89,7 +89,7 @@ python setup.py build_ext --inplace
 - IdxMax: Rolling Max Index. IdxMax($close, 10)
 - IdxMin: Rolling Min Index. IdxMin($close, 10)
 - Min: Rolling Min. Min($close, 10)
-- Quantile: Rolling Quantile. Quantile($close, 10, 5) 过去十天 五分层
+- Quantile: Rolling Quantile. Quantile($close, 10, 0.5) 过去十天 大于50% 收盘价的分位数
 - Med: Rolling Median. Med($close, 10)
 - Mad: Rolling Mean Absolute Deviation. Mad($close, 10)\
 - Rank: Rolling Rank (Percentile). Rank($close, 10)
