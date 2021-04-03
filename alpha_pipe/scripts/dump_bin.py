@@ -47,6 +47,7 @@ class DumpDataBase:
         exclude_fields: str = "",
         include_fields: str = "",
         limit_nums: int = None,
+        instruments_name = 'all'
     ):
         """
 
@@ -107,6 +108,8 @@ class DumpDataBase:
 
         self._mode = self.ALL_MODE
         self._kwargs = {}
+
+        self.INSTRUMENTS_FILE_NAME = '{}.txt'.format(instruments_name)
 
     def _backup_qlib_dir(self, target_dir: Path):
         shutil.copytree(str(self.qlib_dir.resolve()), str(target_dir.resolve()))

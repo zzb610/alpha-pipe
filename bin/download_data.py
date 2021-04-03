@@ -4,6 +4,11 @@ import json
 import sys
 import traceback
 import pymongo
+from IPython.display import display
+import pandas as pd
+import datetime as dt
+from tqdm import tqdm
+import numpy as np
 try:
     import os
     import sys
@@ -26,39 +31,51 @@ with open('./settings/mongo.json') as f:
 
 DB = pymongo.MongoClient(MONGO_URI)[DB_NAME]
 fetcher = DataFetcher(DB,'jqdata')
-# %%
-from IPython.display import display
-import pandas as pd
-import datetime as dt
-from tqdm import tqdm
-import numpy as np
-start_time = '2018-01-01'
-end_time = '2021-01-01'
-DATA_DIR = './data/csv'
-stock_pool = fetcher.get_index_stocks('000906.XSHG', date=start_time)
-day_fields = ['open','close','low','high','volume','money','factor']
-min_fields = ['open','close','low','high','volume','money']
 
-def flatten_min_data(group):
-    
+# %%
+
+# download data
+start_time = '2017-01-01'
+end_time = '2021-03-23'
+DAY_DATA_DIR = './data/day_csv_data'
+MIN_DATA_DIR = './data/min_csv_data'
+ 
+stock_pool = fetcher.get_index_stocks('000906.XSHG', date=start_time)
+print(len(stock_pool))
+day_fields = ['open','close','low','high','volume','money','factor']
+min_fields = ['open','close','low','high','volume','money','factor']
+
+def flatten_min_data(group):    
     columns =  ['{}_{}'.format(field, i+1) for i in range(240) for field in min_fields] 
     flatten_values = group[min_fields].values.flatten()
     flatten_values =  flatten_values.reshape(1, len(columns))
     flatten_data = pd.DataFrame(flatten_values,columns=columns)
     return flatten_data
-    
+
+if not os.path.exists(DAY_DATA_DIR):
+    os.makedirs(DAY_DATA_DIR)
+if not os.path.exists(MIN_DATA_DIR):
+    os.makedirs(MIN_DATA_DIR)
+
+display('start_download........')
+
 for stock in tqdm(stock_pool[:]):
-    day_price = fetcher.get_price(stock, start_time, end_time, '1d', day_fields, fq='pre')
     min_price = fetcher.get_price(stock, start_time, end_time, '1m', min_fields, fq='pre')
- 
+    # 申万一级行业分类
+    industry_group = fetcher.get_industry(stock, date=start_time)[stock]['sw_l1']['industry_code']
+    min_price['group'] = industry_group
+    min_price.to_csv('{}/{}.csv'.format(MIN_DATA_DIR, stock))
+
+    day_price = fetcher.get_price(stock, start_time, end_time, '1d', day_fields, fq='pre')
     day_price.rename(columns={'time':'date'}, inplace=True)
     min_price['date'] = pd.to_datetime(min_price['time']).apply(dt.datetime.strftime,format='%Y-%m-%d')
     min_price = min_price.groupby('date').apply(flatten_min_data)
     min_price = min_price.set_index(min_price.index.get_level_values(0)).reset_index()
     min_price['code'] = stock   
-    # # 申万一级行业分类
-    industry_group = fetcher.get_industry(stock, date=start_time)[stock]['sw_l1']['industry_code']
     data = pd.concat([day_price, min_price], axis=1).dropna()
     data['group'] = industry_group
-    data.to_csv('{}/{}.csv'.format(DATA_DIR, stock))
+    data.to_csv('{}/{}.csv'.format(DAY_DATA_DIR, stock))
+     
+# %%
+ 
 # %%

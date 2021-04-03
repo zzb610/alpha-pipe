@@ -4,20 +4,20 @@
 
 ### 注意
 
-代码必须在bin目录下运行
+代码必须在 bin 目录下运行
 
 ### 下载
 
-直接从github下载源码包即可(**zzb分支!!!!!!!**)
+直接从 github 下载源码包即可(**zzb 分支!!!!!!!**)
 
 ### 安装环境
 
-#### 创建Python虚拟环境(推荐)
+#### 创建 Python 虚拟环境(推荐)
 
 创建环境
 
 ```shell
-python -m venv venv 
+python -m venv venv
 ```
 
 激活环境
@@ -41,26 +41,31 @@ cd venv/Scripts
 pip install -r requirements.txt
 ```
 
-#### 编译pyx
+#### 编译 pyx
 
 ```shell
-python setup.py build_ext --inplace    
+python setup.py build_ext --inplace
 ```
 
 ### 配置数据库
 
-将data.zip解压即可
-
+将 data.zip 解压即可
 
 #### 因子测试
 
-建议习惯用jupyter的用户,将test.py中的代码**按块**复制到.ipynb文件中运行
+建议习惯用 jupyter 的用户,将 test.py 中的代码**按块**复制到.ipynb 文件中运行
 
 #### 基础因子
 
- - '$open','$close','$low','$high','$volume','$money','$factor' 日级别因子
+##### 日级别滚动因子（算子在日 K 线滑动）
 
- - '$open_x', '$close_x', '$low_x', '$high_x', '$volume_x', '$money_x', 其中 x ~ (1, 240) 分钟级别因子
+- '$open','$close','$low','$high','$volume','$money','$factor' 日频
+
+- '$open_x', '$close_x', '$low_x', '$high_x', '$volume_x', '$money_x', 其中 x ~ (1, 240) 1 分钟频
+
+##### 分钟级别滚动因子（算子在 1 分钟 K 线滑动）
+
+- '$open','$close','$low','$high','$volume','$money','$factor' 分钟频
 
 #### 基础算子
 
@@ -70,7 +75,7 @@ python setup.py build_ext --inplace
 ![](docs/op4.jpg) -->
 
 - "> >= < <= == !="
-- "+ - * /"
+- "+ - \* /"
 - "& |": and or
 - Not: Not Operator
 - Abs: Feature Absolute Value
@@ -78,7 +83,7 @@ python setup.py build_ext --inplace
 - Log: Feature Log
 - Power: Feature Power
 - If: If($close>$open, $close, $open)
-- Ref: Feature Reference, 类似pandas shift Ref($close, -1) 下一天的收盘价
+- Ref: Feature Reference, 类似 pandas shift Ref($close, -1) 下一天的收盘价
 - Mean: Rolling Mean (MA) Mean($close, 5)
 - Sum: Rolling Sum Sum($close, 5)
 - Std: Rolling Std. Std($close, 5)
@@ -89,7 +94,7 @@ python setup.py build_ext --inplace
 - IdxMax: Rolling Max Index. IdxMax($close, 10)
 - IdxMin: Rolling Min Index. IdxMin($close, 10)
 - Min: Rolling Min. Min($close, 10)
-- Quantile: Rolling Quantile. Quantile($close, 10, 0.5) 过去十天 大于50% 收盘价的分位数
+- Quantile: Rolling Quantile. Quantile($close, 10, 0.5) 过去十天 大于 50% 收盘价的分位数
 - Med: Rolling Median. Med($close, 10)
 - Mad: Rolling Mean Absolute Deviation. Mad($close, 10)\
 - Rank: Rolling Rank (Percentile). Rank($close, 10)
@@ -102,30 +107,101 @@ python setup.py build_ext --inplace
 - Corr: rolling correlation of two input features. Corr($close, $open, 10)
 - Cov: Rolling Covariance. Cov($close, $open, 10)
 
+### 使用例子
 
-### 测试设置字段
+配置好环境以后 因子测试分为两步
+
+- 第一步 计算因子值 alpha_pipe.factor
 
 ```python
-config = {
-    'market':'all', # 全市场, 目前指2017-01-01的中证800
-    'start_time':'2017-01-01', # 测试开始日期
-    'end_time':'2019-01-01', # 测试结束日期
-    'periods':(1, 1), # 收益计算周期
-    'quantile':5, # 分层数
-    'factor_exp': '$open / Ref($close, 1) - 1', # 因子表达式
-    'ret_exps':['$open', 'Ref($close, 1)'], # 收益表达式
-    'ret_types':['open','Ref($close, 1)'], # 收益表达式的名称
-    'provider_uri':'./data/bin_data', # 数据路径
-    'region':REG_CN # 市场的类型, A股
-}
-
-# len(periods) len(ret_exps) len(ret_types) 必须对应且长度相同!!!!!!
+from alpha_pipe.factor.factor import ExpressionFactor
 ```
 
-### 支持自定义因子数据 (见/bin/df_test.py)
+ExpressionFactor 通过公式计算因子值， CSVFactor 通过 csv 文件加载因子值
 
-用户将因子值算好并打包为 pandas DataFrame 格式 使用DFTest进行单因子测试
+因子值计算分为日频滑动与 1 分钟频滑动两种
 
-因子的格式必须严格为
+- 日频滑动对于每个标的每天计算一个因子值
+- 1 分钟频滑动对于每个标的每分钟计算一个因子值，通常还需要用户手动进行高频因子低频化
 
-![factor_fmt](docs/factor_fmt.jpg)
+```python
+data_dir = './data/bin_data'
+
+# 分钟滚动因子
+ret_names = ['close to close','open to close']
+factor_config = dict(
+    market = 'zz800', # 股票池 中证800
+    start_time = '2017-01-01', # 开始时间
+    end_time = '2018-06-30', # 结束时间
+    freq='min', # 滚动频率 1分钟
+    factor_exp = 'Corr($open, $volume, 240)', # 过去240分钟的open与volume的相关性
+    ret_exps = ['Ref($close, -1)/$close - 1', 'Ref($open, -1)/$close - 1'], # 收益计算公式，注意目前收益仍是日频滚动的
+    ret_names = ret_names, # 收益的名称
+    provider_uri =  data_dir, # 数据库路径
+    region = REG_CN # A股
+)
+
+min_factor = ExpressionFactor(**factor_config) ## 创建ExpressionFactor对象
+min_factor.factor_data() # 获取因子值的接口 DataFrame
+
+# 日滚动因子
+ret_names = ['close to close','open to close']
+factor_config = dict(
+    market = 'zz800',
+    start_time = '2017-01-01',
+    end_time = '2018-06-30',
+    freq='day', # 滚动频率 1天
+    factor_exp = '$close + $volume / 2',
+    ret_exps = ['Ref($close, -1)/$close - 1', 'Ref($open, -1)/$close - 1'], # 收益计算公式
+    ret_names = ret_names,
+    provider_uri = data_dir,
+    region = REG_CN
+)
+
+day_factor = ExpressionFactor(**factor_config)
+day_factor.factor_data()
+```
+
+- 第二步 因子测试 alpha_pipe.analyzer
+
+```python
+from alpha_pipe.analyzer.factor_analyzer import FactorAnalyzer
+```
+
+```python
+from alpha_pipe.analyzer.factor_analyzer import FactorAnalyzer
+
+# 创建分析对象
+ret_names = ['close to close','open to close']
+analyzer_config = dict(
+    quantiles = 5, # 分层数
+    periods = (1,1), # 收益计算周期、调仓周期
+    ret_names = ret_names, # 收益名称
+    binning_by_group =  False, # 是否对每个组分别计算分位数
+    zero_aware = False # 是否分别为正负因子值计算分位数
+)
+far = FactorAnalyzer(**test_config) 
+
+# 设置因子值 注意不能是ExpressionFactor等Factor对象, 可以是他们factor_data() 接口返回的Dataframe因子值
+far.set_factor_data(factor_data) 
+
+## 生成所有图表
+test_config = dict(
+    
+    ## 这两项需要weight字段 没有应设为False
+    demeaned=False, # 是否使用超额收益计算 (基准收益被认为是每日所有股票收益按照weight列中权重加权的均值)
+    group_adjust=False, # 是否使用使用行业中性化后的收益计算
+
+
+    by_group=False, # 是否按行业展示
+    ic_method='rank', # 'rank': 用秩相关系数计算IC值 'normal': 用普通相关系数计算IC值
+    ic_theoretical_dist='norm', # ic的理论分布 'norm': 正态分布 't': t 分布
+
+    turnover_rank=True, # 因子自相关性是否使用秩
+
+    ## 因子预测能力 事件分析 暂时不用 使用以下值即可
+    avgretplot=(5, 15), 
+    std_bar=False
+)
+far.create_full_tear_sheet(**test_config) 
+```

@@ -1,6 +1,5 @@
 # %%
 import traceback
-import pymongo
 try:
     import os
     import sys
@@ -11,15 +10,26 @@ try:
 except Exception as e:
     traceback.print_exc()
 from alpha_pipe.scripts.dump_bin import DumpDataAll
-CSV_PATH = './data/csv/'
-BIN_PATH = './data/bin/'
 
 # %%
+def csv_to_bin(csv_path, bin_path, freq, instruments_name, fields, date_field_name):
+    if not os.path.exists(bin_path):
+        os.makedirs(bin_path)
+    dumper = DumpDataAll(csv_path=csv_path, qlib_dir=bin_path, freq=freq, include_fields=fields, instruments_name=instruments_name, date_field_name=date_field_name, symbol_field_name='code')
+    dumper.dump()
+# %%
+# dump daily data
+CSV_PATH = './data/day_csv_data/'
+BIN_PATH = './data/bin_data/'
 day_fields = ['open','close','low','high','volume','money','factor','group']
 min_fields = ['open','close','low','high','volume','money']
 day_min_fields = ['{}_{}'.format(field, i+1) for i in range(240) for field in min_fields]
 fields = day_fields + day_min_fields
-
-dumper = DumpDataAll(csv_path=CSV_PATH, qlib_dir=BIN_PATH, freq='day',date_field_name='date', symbol_field_name='code',include_fields=fields)
-dumper.dump()
+csv_to_bin(CSV_PATH, BIN_PATH, freq='day', instruments_name='zz800', fields=fields, date_field_name='date')
+# %%
+# dump minute data
+CSV_PATH = './data/min_csv_data/'
+BIN_PATH = './data/bin_data/'
+min_fields = ['open','close','low','high','volume','money','factor','group']
+csv_to_bin(CSV_PATH, BIN_PATH,freq='min', instruments_name='zz800', fields=min_fields, date_field_name='time')
 # %%

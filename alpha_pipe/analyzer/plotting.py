@@ -123,14 +123,15 @@ def plot_returns_table(alpha_beta,
 
 def plot_turnover_table(autocorrelation_data, quantile_turnover):
     turnover_table = pd.DataFrame()
-    for period in sorted(quantile_turnover.keys()):
-        for quantile, p_data in quantile_turnover[period].iteritems():
+  
+    for ret_name in sorted(quantile_turnover.keys()):
+        for quantile, p_data in quantile_turnover[ret_name].iteritems():
             turnover_table.loc["Quantile {} Mean Turnover ".format(quantile),
-                               "{}".format(period)] = p_data.mean()
+                               "{}".format(ret_name)] = p_data.mean()
     auto_corr = pd.DataFrame()
-    for period, p_data in autocorrelation_data.iteritems():
+    for ret_name, p_data in autocorrelation_data.items():
         auto_corr.loc["Mean Factor Rank Autocorrelation",
-                      "{}".format(period)] = p_data.mean()
+                      "{}".format(ret_name)] = p_data.mean()
 
     print("换手率分析")
     print_table(turnover_table.apply(lambda x: x.round(3)))
@@ -675,7 +676,7 @@ def plot_top_bottom_quantile_turnover(quantile_turnover, ret_type, ax=None):
     ax.set(ylabel=TBTURNOVER.get("YLABEL"), xlabel="")
 
     return ax
-
+ 
 @customize
 def plot_monthly_ic_heatmap(mean_monthly_ic, ax=None):
     """
