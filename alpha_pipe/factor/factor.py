@@ -32,7 +32,7 @@ class BaseFactor(metaclass=abc.ABCMeta):
 
 class ExpressionFactor(BaseFactor):
 
-    def __init__(self, market, start_time, end_time, freq, factor_exp, ret_exps, ret_names, provider_uri, region):
+    def __init__(self, market, start_time, end_time, freq, factor_exp, ret_exps, ret_names, provider_uri, region, to_day_func=None):
         super().__init__()
 
         self._market = market
@@ -44,18 +44,25 @@ class ExpressionFactor(BaseFactor):
         self._ret_exps = ret_exps
         self._ret_names = ret_names
 
+        self._to_day_func = to_day_func
+
+        self.raw_data = None
+
         print(provider_uri, region)
         qlib.init(provider_uri=provider_uri, region=region)
 
+  
     def _load_factor_data(self):
-
+        
         instruments = D.instruments(market=self._market)
 
         if self._freq == 'min':
+
             factors_values = D.features(instruments=instruments, fields=[
                                         self._factor_exp, '$group'], start_time=self._start_time, end_time=self._end_time, freq=self._freq)
             ret_values = D.features(instruments=instruments, fields=self._ret_exps,
                                     start_time=self._start_time, end_time=self._end_time, freq='day')
+            print('因子计算完成')
             factors_values.reset_index(inplace=True)
             ret_values.reset_index(inplace=True)
             factors_values['date'] = factors_values.datetime.apply(
@@ -63,8 +70,13 @@ class ExpressionFactor(BaseFactor):
             ret_values['date'] = ret_values.datetime.apply(
                 dt.datetime.strftime, format='%Y-%m-%d')
             ret_values.drop(columns=['datetime'], inplace=True)
+
+            self.raw_data = factors_values
+            factors_values = self._to_day_func(factors_values).reset_index()
+        
             factors_ret = pd.merge(factors_values, ret_values, how='inner', on=[
                                    'instrument', 'date']).drop(columns=['date'])
+
             factors_ret = factors_ret.set_index(['instrument', 'datetime']).sort_index()
         elif self._freq == 'day':
             factors_ret = D.features(instruments=instruments, fields=([self._factor_exp, '$group'] + [
