@@ -17,6 +17,7 @@ data_dir = './data/bin_data'
 ret_names = ['隔夜收益','五天收益']
 periods = (1,5)
 
+# 高频因子低频化函数
 def to_day_func(min_factor):
     from IPython.display import display
     display(min_factor)
@@ -40,12 +41,7 @@ factor_config = dict(
 
 min_factor = ExpressionFactor(**factor_config) ## 创建ExpressionFactor对象
 day_factor_data = min_factor.factor_data() # 获取因子值的接口 DataFrame
-
-## 高频因子低频化
-import pandas as pd
-day_factor_data = min_factor.factor_data().groupby('asset').resample('1d', level=0).first().reset_index().set_index(['date','asset']).sort_index()
-day_factor_data
-
+ 
 # # 日滚动因子
  
 # factor_config = dict(
