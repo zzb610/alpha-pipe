@@ -17,21 +17,29 @@ data_dir = './data/bin_data'
 ret_names = ['隔夜收益','五天收益']
 periods = (1,5)
 
+def to_day_func(min_factor):
+    from IPython.display import display
+    display(min_factor)
+    factor_value = min_factor.groupby('instrument').resample('1d', on='datetime').first().drop(columns=['datetime', 'instrument'])
+    display(factor_value)
+    return factor_value
+
 # 分钟滚动因子
 factor_config = dict(
-    market = 'zz800', # 股票池 中证800
+    market = 'small_sample', # 股票池 中证800
     start_time = '2017-01-01', # 开始时间
-    end_time = '2018-06-30', # 结束时间
+    end_time = '2018-01-05', # 结束时间
     freq='min', # 滚动频率 1分钟
     factor_exp = 'Corr($open, $volume, 240)', # 过去240分钟的open与volume的相关系数
     ret_exps = ['Ref($close_10, -1)/$close_230 - 1', 'Ref($open, -5)/$close - 1'], # 收益计算公式，注意目前仍然是日频滚动的
     ret_names = ret_names, # 收益的名称
     provider_uri =  data_dir, # 数据库路径
-    region = REG_CN # A股
+    region = REG_CN, # A股
+    to_day_func=to_day_func
 )
 
 min_factor = ExpressionFactor(**factor_config) ## 创建ExpressionFactor对象
-# min_factor.factor_data() # 获取因子值的接口 DataFrame
+day_factor_data = min_factor.factor_data() # 获取因子值的接口 DataFrame
 
 ## 高频因子低频化
 import pandas as pd
