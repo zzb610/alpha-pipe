@@ -3,7 +3,7 @@
 from __future__ import division, print_function
 
 from collections import Iterable
-from os import name
+from IPython.core.display import display
 
 import numpy as np
 import pandas as pd
@@ -12,7 +12,7 @@ from scipy.stats import spearmanr, pearsonr, morestats
 
 from . import performance as perf, plotting as pl
 from .plot_utils import _use_chinese, customize
-from .utils import convert_to_forward_returns_columns, ensure_tuple, quantize_factor
+from .utils import Indicators, convert_to_forward_returns_columns, ensure_tuple, quantize_factor
 from .tears import GridFigure
 
 import matplotlib.pyplot as plt
@@ -822,7 +822,6 @@ class FactorAnalyzer(object):
         """画各分位数每日累积收益图
 
         参数:
-        period: 调仓周期
         demeaned:
         详见 calc_mean_return_by_quantile 中 demeaned 参数
         - True: 使用超额收益计算累积收益 (基准收益被认为是每日所有股票收益按照weight列中权重加权的均值)
@@ -841,6 +840,36 @@ class FactorAnalyzer(object):
 
             ax.axhline(1.0, linestyle='-', color='black', lw=1)
             ax.set(title='分层累积收益 {} '.format(name))
+    
+    def plot_cumulative_returns_indicators(self, demeaned, group_adjust):
+        """画各分位数每日累积收益图
+
+        参数:
+        demeaned:
+        详见 calc_mean_return_by_quantile 中 demeaned 参数
+        - True: 使用超额收益计算累积收益 (基准收益被认为是每日所有股票收益按照weight列中权重加权的均值)
+        - False: 不使用超额收益
+        group_adjust:
+        详见 calc_mean_return_by_quantile 中 group_adjust 参数
+        - True: 使用行业中性化后的收益计算累积收益
+                (行业收益被认为是每日各个行业股票收益按照weight列中权重加权的均值)
+        - False: 不使用行业中性化后的收益
+        """
+        for name, period in zip(self._ret_names, self._periods):
+            cum_ret = self.calc_cumulative_return_by_quantile(
+                name, period, demeaned, group_adjust)
+            quantiles = set(cum_ret.columns)
+            quantiles.remove('top_bottom')
+            ret = cum_ret[['top_bottom',min(quantiles), max(quantiles)]]
+            indicators = pd.DataFrame()
+            print('{} 收益指标 {} 天调仓'.format(name, period))
+            for col in ret.columns:
+                indicator = Indicators(ret[col], period)
+                indicator.name = col
+                indicators = indicators.append(indicator)
+            display(indicators)
+
+      
 
     def plot_quantile_average_cumulative_return(self, periods_before, periods_after,
                                                 by_quantile, std_bar,
@@ -934,6 +963,7 @@ class FactorAnalyzer(object):
         pl.plt.show()
         self.plot_cumulative_returns_by_quantile(
             demeaned=demeaned, group_adjust=group_adjust)
+        self.plot_cumulative_returns_indicators(demeaned=demeaned, group_adjust=group_adjust)
         self.plot_top_down_cumulative_returns(
             demeaned=demeaned, group_adjust=group_adjust)
         pl.plt.show()
@@ -1060,6 +1090,7 @@ class FactorAnalyzer(object):
         self.plot_cumulative_returns_by_quantile(
             demeaned=demeaned,
             group_adjust=group_adjust)
+        self.plot_cumulative_returns_indicators(demeaned=demeaned, group_adjust=group_adjust)
         self.plot_mean_quantile_returns_spread_time_series(demeaned=demeaned,
                                                            group_adjust=group_adjust)
         pl.plt.show()

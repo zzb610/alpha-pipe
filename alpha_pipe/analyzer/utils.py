@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from numpy import sqrt, mean
+from collections import Iterable
+from functools import wraps
+import six
 import pandas as pd
 import numpy as np
 import re
@@ -412,14 +416,14 @@ def demean_forward_returns(factor_data, grouper=None):
 
     cols = get_forward_returns_columns(factor_data.columns)
 
- 
     # factor_data[cols] = factor_data.groupby(grouper)[cols] \
     #     .transform(lambda x: x - x.mean())
     factor_data[cols] = factor_data.groupby(
         grouper, as_index=False
     )[cols.append(pd.Index(['weights']))].apply(
         lambda x: x[cols].subtract(
-            np.average(x[cols], axis=0, weights=x['weights'].fillna(0.0).values),
+            np.average(x[cols], axis=0,
+                       weights=x['weights'].fillna(0.0).values),
             axis=1
         )
     )
@@ -1050,11 +1054,6 @@ def diff_custom_calendar_timedeltas(start, end, freq):
     delta_days = timediff.components.days - actual_days
     return timediff - pd.Timedelta(days=delta_days)
 
-import re
-import six
-import warnings
-from functools import wraps
-from collections import Iterable
 
 def convert_to_forward_returns_columns(period):
     try:
@@ -1082,3 +1081,46 @@ def ensure_tuple(x):
         return (x,)
     else:
         return tuple(x)
+
+
+def Indicators(value, period):
+
+    columns = ['总收益', '年化收益', '波动率', '夏普比', '最大回撤', '卡玛比率', '日胜率', '盈亏比']
+
+    def MaxBack(value):
+
+        drawback = []
+
+        for i, v in enumerate(value):
+
+            drawback.append(max(1-value[i:]/v))
+
+        MaxBack = max(drawback)
+
+        return MaxBack
+
+    value = [i/value[0] for i in value]
+
+    AllRtn = round(value[-1]*100-100, 2)
+
+    AulRtn = round(pow(value[-1], 250/period/len(value))*100-100, 2)
+
+    value = pd.Series(value)
+    Rtns = value.pct_change(1).dropna()
+
+    Volity = round(sqrt(Rtns.var()*250 /period)*100, 2)
+    SpRatio = round((AulRtn-4)/Volity, 2)
+    MaxBack = round(MaxBack(value)*100, 2)
+    CmRatio = round(AulRtn/MaxBack, 2)
+
+    R1 = [i for i in Rtns.values if i > 0]
+    R2 = [i for i in Rtns.values if i < 0]
+
+    WinRate = round(len(R1)/(len(R1)+len(R2))*100, 3)
+    BidRatio = round(-mean(R1)/mean(R2), 3)
+
+    data = [AllRtn, AulRtn, Volity, SpRatio,
+             MaxBack, CmRatio, WinRate, BidRatio]
+    result = pd.Series(index=columns, data=data)
+
+    return result
