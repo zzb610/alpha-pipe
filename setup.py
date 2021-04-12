@@ -69,14 +69,14 @@ with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
 # Cython Extensions
 extensions = [
     Extension(
-        "alpha_pipe.qlib.data._libs.rolling",
-        ["alpha_pipe/qlib/data/_libs/rolling.pyx"],
+        "alpha_pipe.qlib_data.data._libs.rolling",
+        ["alpha_pipe/qlib_data/data/_libs/rolling.pyx"],
         language="c++",
         include_dirs=[NUMPY_INCLUDE],
     ),
     Extension(
-        "alpha_pipe.qlib.data._libs.expanding",
-        ["alpha_pipe/qlib/data/_libs/expanding.pyx"],
+        "alpha_pipe.qlib_data.data._libs.expanding",
+        ["alpha_pipe/qlib_data/data/_libs/expanding.pyx"],
         language="c++",
         include_dirs=[NUMPY_INCLUDE],
     ),
