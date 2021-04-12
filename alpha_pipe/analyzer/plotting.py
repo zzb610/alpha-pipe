@@ -124,10 +124,11 @@ def plot_returns_table(alpha_beta,
 def plot_turnover_table(autocorrelation_data, quantile_turnover):
     turnover_table = pd.DataFrame()
   
-    for ret_name in sorted(quantile_turnover.keys()):
+    for ret_name in quantile_turnover.keys():
         for quantile, p_data in quantile_turnover[ret_name].iteritems():
             turnover_table.loc["Quantile {} Mean Turnover ".format(quantile),
                                "{}".format(ret_name)] = p_data.mean()
+        
     auto_corr = pd.DataFrame()
     for ret_name, p_data in autocorrelation_data.items():
         auto_corr.loc["Mean Factor Rank Autocorrelation",
