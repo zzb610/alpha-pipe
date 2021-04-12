@@ -1085,7 +1085,7 @@ def ensure_tuple(x):
 
 def Indicators(value, period):
 
-    columns = ['总收益', '年化收益', '波动率', '夏普比', '最大回撤', '卡玛比率', '日胜率', '盈亏比']
+    columns = ['总收益', '年化收益', '波动率', '夏普比', '最大回撤', '卡玛比率', '{}日胜率'.format(period), '盈亏比']
 
     def MaxBack(value):
 
