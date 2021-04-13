@@ -90,7 +90,7 @@ class ExpressionFactor(BaseFactor):
 
         factors_ret = factors_ret.rename(columns={self._factor_exp: 'factor'})
         factors_ret = factors_ret.rename(columns={exp: 'return({})'.format(
-            name) for exp, name in zip(self._ret_exps, self._ret_names)}).dropna()
+            name) for exp, name in zip(self._ret_exps, self._ret_names)})
 
         return factors_ret
 
