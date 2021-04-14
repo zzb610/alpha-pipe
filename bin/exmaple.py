@@ -1,67 +1,50 @@
 # %%
-import traceback
-try:
-    import os
-    import sys
-    cur_path = os.path.abspath(os.path.join(
-        os.path.dirname('__file__'), os.path.pardir))
-    sys.path.append(cur_path)
-
-    from alpha_pipe.mtdata.api.fetch import DataFetcher
-except Exception as e:
-    traceback.print_exc()
+import sys
+sys.path.append('/home/ycbw/projects/alpha-pipe/')
 from alpha_pipe.factor.factor import ExpressionFactor
-from alpha_pipe.qlib.config import REG_CN
+from alpha_pipe.analyzer.factor_analyzer import FactorAnalyzer
+ 
 # %%
 data_dir = './data/bin_data'
 ret_names = ['隔夜收益','五天收益']
 periods = (1,5)
-
-# 高频因子低频化函数
-def to_day_func(min_factor):
-    from IPython.display import display
-    display(min_factor)
-    factor_value = min_factor.groupby('instrument').resample('1d', on='datetime').first().drop(columns=['datetime', 'instrument'])
-    display(factor_value)
-    return factor_value
-
-# 分钟滚动因子
-factor_config = dict(
-    market = 'small_sample', # 股票池 中证800
-    start_time = '2017-01-01', # 开始时间
-    end_time = '2018-01-05', # 结束时间
-    freq='min', # 滚动频率 1分钟
-    factor_exp = 'Corr($open, $volume, 240)', # 过去240分钟的open与volume的相关系数
-    ret_exps = ['Ref($close_10, -1)/$close_230 - 1', 'Ref($open, -5)/$close - 1'], # 收益计算公式，注意目前仍然是日频滚动的
-    ret_names = ret_names, # 收益的名称
-    provider_uri =  data_dir, # 数据库路径
-    region = REG_CN, # A股
-    to_day_func=to_day_func
-)
-
-min_factor = ExpressionFactor(**factor_config) ## 创建ExpressionFactor对象
-day_factor_data = min_factor.factor_data() # 获取因子值的接口 DataFrame
  
-# # 日滚动因子
- 
+
+# # 分钟滚动因子
 # factor_config = dict(
-#     market = 'zz800',
-#     start_time = '2017-01-01',
-#     end_time = '2018-06-30',
-#     freq='day', # 滚动频率 1天
-#     factor_exp = '$close + $volume / 2',
-#     ret_exps = ['Ref($close_10, -1)/$close_230 - 1', 'Ref($open, -5)/$close - 1'], # 收益计算公式
-#     ret_names = ret_names,
-#     provider_uri = data_dir,
-#     region = REG_CN
+#     market = 'small_sample', # 股票池 中证800
+#     start_time = '2017-01-01', # 开始时间
+#     end_time = '2017-01-05', # 结束时间
+#     freq='min', # 滚动频率 1分钟
+#     factor_exp = 'Corr($open, $volume, 240)', # 过去240分钟的open与volume的相关系数
+#     ret_exps = ['Ref($close_10, -1)/$close_230 - 1', 'Ref($open, -5)/$close - 1'], # 收益计算公式，注意目前仍然是日频滚动的
+#     ret_names = ret_names, # 收益的名称
+#     provider_uri =  data_dir, # 数据库路径
 # )
 
-# day_factor = ExpressionFactor(**factor_config)
-# day_factor_data = day_factor.factor_data()
+# min_factor = ExpressionFactor(**factor_config) ## 创建ExpressionFactor对象
+# day_factor_data = min_factor.factor_data() # 获取因子值的接口 DataFrame
 
+ 
+
+# 日滚动因子
+ 
+factor_config = dict(
+    market = 'zz800',
+    start_time = '2017-01-01',
+    end_time = '2018-06-30',
+    freq='day', # 滚动频率 1天
+    factor_exp = '$close + $volume / 2',
+    ret_exps = ['Ref($close_10, -1)/$close_230 - 1', 'Ref($open, -5)/$close - 1'], # 收益计算公式
+    ret_names = ret_names,
+    provider_uri = data_dir,
+)
+
+day_factor = ExpressionFactor(**factor_config)
+day_factor_data = day_factor.factor_data()
+
+ 
 # %%
-from alpha_pipe.analyzer.factor_analyzer import FactorAnalyzer
-
 # 创建分析对象
 analyzer_config = dict(
     quantiles = 5, # 分层数
@@ -93,13 +76,5 @@ test_config = dict(
     avgretplot=(5, 15), 
     std_bar=False
 )
-far.create_full_tear_sheet(**test_config)
-# %%
-
-# 保存因子
-day_factor_data.to_csv('factors/factor1.csv')
-# 加载本地因子
-from alpha_pipe.factor.factor import CSVFactor
-local_factors = CSVFactor('factors/factor1.csv')
-local_factors.factor_data()
+far.create_full_tear_sheet(**test_config) 
 # %%
