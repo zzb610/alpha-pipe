@@ -146,7 +146,7 @@ class _PlotLabels(object):
 
 
 class ICTS(_PlotLabels):
-    TITLE_CN = "{} 天 IC"
+    TITLE_CN = "{} IC"
     TITLE_EN = "{} Period Forward Return Information Coefficient (IC)"
     LEGEND_CN = ["IC", "1个月移动平均"]
     LEGEND_EN = ["IC", "1 month moving avg"]
@@ -158,7 +158,7 @@ ICTS = ICTS()
 
 
 class ICHIST(_PlotLabels):
-    TITLE_CN = "%s 天 IC 分布直方图"
+    TITLE_CN = "%s IC 分布直方图"
     TITLE_EN = "%s Period IC"
     LEGEND_CN = "均值 {:.3f} \n方差 {:.3f}"
     LEGEND_EN = "Mean {:.3f} \nStd. {:.3f}"
@@ -174,7 +174,7 @@ class ICQQ(_PlotLabels):
     T_EN = "T"
     CUSTOM_CN = "自定义"
     CUSTOM_EN = "Theoretical"
-    TITLE_CN = "{} 天 IC {}分布 Q-Q 图"
+    TITLE_CN = "{} IC {}分布 Q-Q 图"
     TITLE_EN = "{} Period IC {} Dist. Q-Q"
     XLABEL_CN = "{} 分布分位数"
     XLABEL_EN = "{} Distribution Quantile"

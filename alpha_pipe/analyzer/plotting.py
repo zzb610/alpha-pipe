@@ -677,7 +677,8 @@ def plot_top_bottom_quantile_turnover(quantile_turnover, ret_type, ax=None):
     ax.set(ylabel=TBTURNOVER.get("YLABEL"), xlabel="")
 
     return ax
- 
+
+
 @customize
 def plot_monthly_ic_heatmap(mean_monthly_ic, ax=None):
     """

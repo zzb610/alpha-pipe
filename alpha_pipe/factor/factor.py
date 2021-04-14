@@ -5,7 +5,6 @@ from alpha_pipe.qlib_data.data import LocalProvider, LocalInstrumentProvider
 from alpha_pipe.qlib_data.config import QlibConfig, _default_config
 
 import datetime as dt
-from .utils import qlib_to_alphalens
 import gc
 import pandas as pd
 

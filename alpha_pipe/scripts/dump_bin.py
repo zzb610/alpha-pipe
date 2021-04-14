@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from loguru import logger
-from alpha_pipe.qlib.utils import fname_to_code, code_to_fname
+from alpha_pipe.qlib_data.utils import fname_to_code, code_to_fname
 
 
 class DumpDataBase:

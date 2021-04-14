@@ -12,7 +12,7 @@ from scipy.stats import spearmanr, pearsonr, morestats
 
 from . import performance as perf, plotting as pl
 from .plot_utils import _use_chinese, customize
-from .utils import Indicators, convert_to_forward_returns_columns, ensure_tuple, quantize_factor
+from .utils import Indicators, convert_to_forward_returns_columns, ensure_tuple, ignore_warning, quantize_factor
 from .tears import GridFigure
 
 import matplotlib.pyplot as plt
@@ -235,7 +235,7 @@ class FactorAnalyzer(object):
         )
 
     @lru_cache(16)
-    def calc_average_cumulative_return_by_quantile(self, ret_name, periods_before, periods_after, demeaned, group_adjust):
+    def calc_average_cumulative_return_by_quantile(self, ret_name, periods,periods_before, periods_after, demeaned, group_adjust):
         """按照当天的分位数算分位数未来和过去的收益均值和标准差
 
         参数:
@@ -258,6 +258,7 @@ class FactorAnalyzer(object):
         return perf.average_cumulative_return_by_quantile(
             self._clean_factor_data,
             returns=returns,
+            periods=periods,
             periods_before=periods_before,
             periods_after=periods_after,
             demeaned=demeaned,
@@ -413,13 +414,13 @@ class FactorAnalyzer(object):
         # from IPython.display import display
         # display(ret_wide)
 
-        freq = '{}B'.format(period)
-        ret_wide = ret_wide.reset_index().set_index('date')
-        ret_wide = ret_wide.resample(freq).first()
-        cum_ret = ret_wide.apply(perf.cumulative_returns)
+        # freq = '{}B'.format(period)
+        # ret_wide = ret_wide.reset_index().set_index('date')
+        # ret_wide = ret_wide.resample(freq).first()
 
-        cum_ret = cum_ret.loc[:, ::-1]  # we want negative quantiles as 'red'
-
+        cum_ret = ret_wide.apply(perf.cumulative_returns, period=period, axis=0)
+ 
+ 
         return cum_ret
 
     @lru_cache(20)
@@ -447,11 +448,13 @@ class FactorAnalyzer(object):
         ret_name = 'return({})'.format(ret_name)
         factor_returns = self.calc_factor_returns(
             demeaned=demeaned, group_adjust=group_adjust)[ret_name]
-        freq = '{}B'.format(period)
-        factor_returns = factor_returns.reset_index().set_index('date')
-        factor_returns = factor_returns.resample(freq).first()
-        cum_ret = factor_returns.apply(perf.cumulative_returns)
-        cum_ret = cum_ret.loc[:, ::-1]  # we want negative quantiles as 'red'
+
+        # freq = '{}B'.format(period)
+        # factor_returns = factor_returns.reset_index().set_index('date')
+        # factor_returns = factor_returns.resample(freq).first()
+        # from IPython.display import display
+        # display(factor_returns)
+        cum_ret = perf.cumulative_returns(factor_returns, period=period)
         return cum_ret
 
     @lru_cache(20)
@@ -484,12 +487,10 @@ class FactorAnalyzer(object):
         if ret_wide.sum() < 0:
             ret_wide = -ret_wide
 
-        freq = '{}B'.format(period)
-        ret_wide = ret_wide.reset_index().set_index('date')
-        ret_wide = ret_wide.resample(freq).first()
-        cum_ret = ret_wide.apply(perf.cumulative_returns)
-
-        cum_ret = cum_ret.loc[:, ::-1]  # we want negative quantiles as 'red'
+        # freq = '{}B'.format(period)
+        # ret_wide = ret_wide.reset_index().set_index('date')
+        # ret_wide = ret_wide.resample(freq).first()
+        cum_ret = perf.cumulative_returns(ret_wide, period=period)
         cum_ret.columns = [ret_name]
         return cum_ret
 
@@ -756,6 +757,7 @@ class FactorAnalyzer(object):
             pl.plot_top_bottom_quantile_turnover(
                 quantile_turnover_rate[name], name)
 
+   
     def plot_monthly_ic_heatmap(self, group_adjust, ic_method):
         """画月度信息比率(IC)图
 
@@ -790,8 +792,11 @@ class FactorAnalyzer(object):
         for name, period in zip(self._ret_names, self._periods):
             cum_ret = self.calc_cumulative_returns(
                 name, period, demeaned, group_adjust)
-            cum_ret.plot(ax=ax, lw=3, alpha=0.6)
-            ax.set(title='因子值加权累积收益 {}'.format(name))
+
+            # cum_ret.plot(ax=ax, lw=3, alpha=0.6, label=name)
+            ax.plot(cum_ret, lw=3, alpha=0.6, label=name)
+        ax.set(title='因子值加权累积收益')
+        ax.legend()
         ax.axhline(1.0, linestyle='-', color='black', lw=1)
 
     @customize
@@ -813,8 +818,8 @@ class FactorAnalyzer(object):
         for name, period in zip(self._ret_names, self._periods):
             cum_ret = self.calc_top_down_cumulative_returns(
                 name, period, demeaned, group_adjust)
-            cum_ret.plot(ax=ax, lw=3, alpha=0.6)
-            ax.set(title='最高层最低层多空对冲收益 {} '.format(name))
+            cum_ret.plot(ax=ax, lw=3, alpha=0.6, label=name)
+        ax.set(title='最高层最低层多空对冲收益')
         ax.axhline(1.0, linestyle='-', color='black', lw=1)
 
     @customize
@@ -842,23 +847,13 @@ class FactorAnalyzer(object):
             ax.set(title='分层累积收益 {} '.format(name))
     
     def plot_cumulative_returns_indicators(self, demeaned, group_adjust):
-        """画各分位数每日累积收益图
-
-        参数:
-        demeaned:
-        详见 calc_mean_return_by_quantile 中 demeaned 参数
-        - True: 使用超额收益计算累积收益 (基准收益被认为是每日所有股票收益按照weight列中权重加权的均值)
-        - False: 不使用超额收益
-        group_adjust:
-        详见 calc_mean_return_by_quantile 中 group_adjust 参数
-        - True: 使用行业中性化后的收益计算累积收益
-                (行业收益被认为是每日各个行业股票收益按照weight列中权重加权的均值)
-        - False: 不使用行业中性化后的收益
+        """
+        夏普比等收益指标
         """
         for name, period in zip(self._ret_names, self._periods):
             cum_ret = self.calc_cumulative_return_by_quantile(
                 name, period, demeaned, group_adjust)
-            quantiles = set(cum_ret.columns)
+            quantiles = set(pd.DataFrame(cum_ret).columns)
             quantiles.remove('top_bottom')
             ret = cum_ret[['top_bottom',min(quantiles), max(quantiles)]]
             indicators = pd.DataFrame()
@@ -871,7 +866,7 @@ class FactorAnalyzer(object):
 
       
 
-    def plot_quantile_average_cumulative_return(self, periods_before, periods_after,
+    def plot_quantile_average_cumulative_return(self, periods,periods_before, periods_after,
                                                 by_quantile, std_bar,
                                                 demeaned, group_adjust):
         """因子预测能力平均累计收益图
@@ -896,6 +891,7 @@ class FactorAnalyzer(object):
         for name in self._ret_names:
             average_cumulative_return_by_q = self.calc_average_cumulative_return_by_quantile(
                 name,
+                periods,
                 periods_before=periods_before, periods_after=periods_after,
                 demeaned=demeaned, group_adjust=group_adjust
             )
@@ -1123,20 +1119,20 @@ class FactorAnalyzer(object):
         self.plot_factor_auto_correlation(turnover_rank)
         pl.plt.show()
         print("\n-------------------------\n")
-        before, after = avgretplot
-        self.plot_quantile_average_cumulative_return(
-            periods_before=before, periods_after=after,
-            by_quantile=False, std_bar=False,
-            demeaned=demeaned, group_adjust=group_adjust
-        )
-        pl.plt.show()
-        if std_bar:
-            self.plot_quantile_average_cumulative_return(
-                periods_before=before, periods_after=after,
-                by_quantile=True, std_bar=True,
-                demeaned=demeaned, group_adjust=group_adjust
-            )
-            pl.plt.show()
+        # before, after = avgretplot
+        # self.plot_quantile_average_cumulative_return(
+        #     periods_before=before, periods_after=after,periods=self._periods
+        #     by_quantile=False, std_bar=False,
+        #     demeaned=demeaned, group_adjust=group_adjust
+        # )
+        # pl.plt.show()
+        # if std_bar:
+        #     self.plot_quantile_average_cumulative_return(
+        #         periods_before=before, periods_after=after,
+        #         by_quantile=True, std_bar=True,
+        #         demeaned=demeaned, group_adjust=group_adjust
+        #     )
+        #     pl.plt.show()
 
     def plot_disable_chinese_label(self):
         """关闭中文图例显示

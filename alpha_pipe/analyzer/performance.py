@@ -1,18 +1,4 @@
-#
-# Copyright 2017 Quantopian, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+from IPython.core.display import display
 import pandas as pd
 import numpy as np
 import warnings
@@ -325,27 +311,47 @@ def factor_alpha_beta(factor_data,
 
     return alpha_beta
 
+def cumulative_returns(returns, period):
+    """计算累积收益
 
-def cumulative_returns(returns):
-    """
-    Computes cumulative returns from simple daily returns.
+    当period大于1时, 建立平均 period 个交错的投资组合 (在随后的时段 1,2,3，...，period 开始)
+    对每个投资组合的收益折算为日收益率之后进行平均
 
     Parameters
     ----------
-    returns: pd.Series
-        pd.Series containing daily factor returns (i.e. '1D' returns).
+    returns : 
+        因子的远期（预期）收益序列
+    period : 
+        因子远期收益的周期（/天） 同时也是调仓周期
 
     Returns
     -------
-    Cumulative returns series : pd.Series
-        Example:
-            2015-01-05   1.001310
-            2015-01-06   1.000805
-            2015-01-07   1.001092
-            2015-01-08   0.999200
+        累积的净值序列
     """
+    returns = returns.fillna(0)
 
-    return ep.cum_returns(returns, starting_value=1)
+    if period == 1:
+        return returns.add(1).cumprod()
+    
+    # 构建 N 个交错的投资组合
+    def split_portfolio(ret):
+        return pd.DataFrame(np.diag(ret))
+
+    sub_portfolios = returns.groupby(
+        np.arange(len(returns.index)) // period, axis=0
+    ).apply(split_portfolio)
+    sub_portfolios.index = returns.index
+    
+    # 将 period 期收益转换为 1 期收益, 方便计算累积收益
+    # 按照年化收益相等进行反解
+    def rate_of_returns(ret, period):
+        return ((np.nansum(ret) + 1)**(1. / period)) - 1
+
+    sub_portfolios = sub_portfolios.rolling(window=period,min_periods=1,center=False).apply(rate_of_returns, False, args=(period,))
+    sub_portfolios = sub_portfolios.add(1).cumprod()
+
+    # 求 period 个投资组合累积收益均值
+    return sub_portfolios.mean(axis=1)
 
 
 def positions(weights, period, freq=None):
@@ -633,6 +639,7 @@ def factor_autocorrelation(factor_data, period=1, rank=True):
 
 def common_start_returns(factor,
                          returns,
+                         periods,
                          before,
                          after,
                          cumulative=False,
@@ -655,6 +662,7 @@ def common_start_returns(factor,
         columns. Returns data should span the factor analysis time period
         plus/minus an additional buffer window corresponding to after/before
         period parameters.
+    periods: add for alpha_pipe
     before:
         How many returns to load before factor date
     after:
@@ -721,6 +729,7 @@ def common_start_returns(factor,
 
 def average_cumulative_return_by_quantile(factor_data,
                                           returns,
+                                          periods,
                                           periods_before=10,
                                           periods_after=15,
                                           demeaned=True,
@@ -743,6 +752,7 @@ def average_cumulative_return_by_quantile(factor_data,
         columns. Returns data should span the factor analysis time period
         plus/minus an additional buffer window corresponding to periods_after/
         periods_before parameters.
+    periods: add for alpha_pipe
     periods_before : int, optional
         How many periods before factor to plot
     periods_after  : int, optional
@@ -784,6 +794,7 @@ def average_cumulative_return_by_quantile(factor_data,
         return common_start_returns(
             q_fact,
             returns,
+            periods,
             periods_before,
             periods_after,
             cumulative=True,
@@ -922,8 +933,7 @@ def factor_cumulative_returns(factor_data,
     returns = \
         factor_returns(portfolio_data, long_short, group_neutral, equal_weight)
 
-    return cumulative_returns(returns[period])
-    # return cumulative_returns(returns[period], period)
+    return cumulative_returns(returns[period], period)
 
 
 def factor_positions(factor_data,

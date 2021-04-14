@@ -1,18 +1,3 @@
-#
-# Copyright 2018 Quantopian, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from numpy import sqrt, mean
 from collections import Iterable
 from functools import wraps
@@ -918,7 +903,8 @@ def get_forward_returns_columns(columns, require_exact_day_multiple=False):
     # If exact day multiples are required in the forward return periods,
     # drop all other columns (e.g. drop 3D12h).
     if require_exact_day_multiple:
-        pattern = re.compile(r"^(\d+([D]))+$", re.IGNORECASE)
+        # pattern = re.compile(r"^(\d+([D]))+$", re.IGNORECASE)
+        pattern = re.compile(r"^(return\(.+\))$", re.IGNORECASE)
         valid_columns = [(pattern.match(col) is not None) for col in columns]
 
         if sum(valid_columns) < len(valid_columns):
@@ -1085,7 +1071,7 @@ def ensure_tuple(x):
 
 def Indicators(value, period):
 
-    columns = ['总收益', '年化收益', '波动率', '夏普比', '最大回撤', '卡玛比率', '{}日胜率'.format(period), '盈亏比']
+    columns = ['总收益', '年化收益', '波动率', '夏普比', '最大回撤', '卡玛比率', '日胜率', '盈亏比']
 
     def MaxBack(value):
 
