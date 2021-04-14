@@ -9,30 +9,34 @@ from scipy import stats
 from statsmodels.regression.linear_model import OLS
 from statsmodels.tools.tools import add_constant
 from . import utils
-
+ 
 
 def factor_information_coefficient(
-    factor_data, group_adjust=False, by_group=False, method=stats.spearmanr
+    factor_data:pd.DataFrame, group_adjust=False, by_group=False, method=stats.spearmanr
 ):
-    """
-    通过因子值与因子远期收益计算信息系数(IC).
+    """计算因子值与远期收益的相关系数(IC)
 
-    参数
+    Parameters
     ----------
-    factor_data : pd.DataFrame - MultiIndex
-        一个 DataFrame, index 为日期 (level 0) 和资产(level 1) 的 MultiIndex,
-        values 包括因子的值, 各期因子远期收益, 因子分位数,
-        因子分组(可选), 因子权重(可选)
-    group_adjust : bool
-        是否使用分组去均值后的因子远期收益计算 IC.
-    by_group : bool
-        是否分组计算 IC.
+    factor_data : pd.DataFrame
+        标准因子数据, index 为 date (level 0) 和 asset (level 1) 
+        factor-因子值 return(xxx)-远期收益 factor_quantile-因子值分位数
+        group-因子分组(可选) weight-因子权重(可选)
+
+    group_adjust : bool, optional
+        是否使用分组去均值后的因子远期收益计算IC, by default False
+
+    by_group : bool, optional
+        是否分组计算IC, by default False
+
+    method : optional
+        计算IC的方法, by default stats.spearmanr
+
     Returns
     -------
-    ic : pd.DataFrame
-        因子信息系数(IC).
+    returns : 
+        因子与收益每天的IC
     """
-
     def src_ic(group):
         f = group['factor']
         _ic = group[utils.get_forward_returns_columns(factor_data.columns)] \

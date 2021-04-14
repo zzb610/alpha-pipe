@@ -895,28 +895,12 @@ def std_conversion(period_std, base_period):
     return period_std / np.sqrt(conversion_factor)
 
 
-def get_forward_returns_columns(columns, require_exact_day_multiple=False):
+def get_forward_returns_columns(columns):
     """
-    Utility that detects and returns the columns that are forward returns
+    返回远期收益的序列
     """
-
-    # If exact day multiples are required in the forward return periods,
-    # drop all other columns (e.g. drop 3D12h).
-    if require_exact_day_multiple:
-        # pattern = re.compile(r"^(\d+([D]))+$", re.IGNORECASE)
-        pattern = re.compile(r"^(return\(.+\))$", re.IGNORECASE)
-        valid_columns = [(pattern.match(col) is not None) for col in columns]
-
-        if sum(valid_columns) < len(valid_columns):
-            warnings.warn(
-                "Skipping return periods that aren't exact multiples"
-                + " of days."
-            )
-    else:
-        # pattern = re.compile(r"^(\d+([Dhms]|ms|us|ns]))+$", re.IGNORECASE)
-        pattern = re.compile(r"^(return\(.+\))$", re.IGNORECASE)
-        valid_columns = [(pattern.match(col) is not None) for col in columns]
-
+    pattern = re.compile(r"^(return\(.+\))$", re.IGNORECASE)
+    valid_columns = [(pattern.match(col) is not None) for col in columns]
     return columns[valid_columns]
 
 
