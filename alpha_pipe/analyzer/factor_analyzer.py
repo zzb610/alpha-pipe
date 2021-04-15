@@ -678,13 +678,15 @@ class FactorAnalyzer(object):
         plot_quantile_returns_violin: 有效收益分位数(单位为百分之). 画图时y轴的范围为有效收益的最大/最小值.
                                       例如 (1, 99) 代表收益的从小到大排列的 1% 分位到 99% 分位为有效收益.
         """
-        mean_return_by_date, _ = self.calc_mean_return_by_quantile(
+        mean_return_by_quantile, _ = self.calc_mean_return_by_quantile(
             by_date=True, by_group=False,
             demeaned=demeaned, group_adjust=group_adjust
         )
-
-        pl.plot_quantile_returns_violin(mean_return_by_date,
+        for name, period in zip(self._ret_names, self._periods):
+            mean_return_by_quantile['return({})'.format(name)] = mean_return_by_quantile['return({})'.format(name)].apply(rate_of_returns, period=period)
+        pl.plot_quantile_returns_violin(mean_return_by_quantile,
                                         ylim_percentiles=ylim_percentiles)
+                                        
 
     def plot_mean_quantile_returns_spread_time_series(
         self, demeaned, group_adjust, bandwidth=1
