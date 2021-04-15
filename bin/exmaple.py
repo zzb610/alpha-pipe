@@ -1,8 +1,17 @@
 # %%
-import sys
-sys.path.append('/home/ycbw/projects/alpha-pipe/')
+try:
+    import os
+    import sys
+    cur_path = os.path.abspath(os.path.join(
+        os.path.dirname('__file__'), os.path.pardir))
+    sys.path.append(cur_path)
+
+except Exception as e:
+    print(e)
+
 from alpha_pipe.factor.factor import ExpressionFactor
 from alpha_pipe.analyzer.factor_analyzer import FactorAnalyzer
+ 
  
 # %%
 data_dir = './data/bin_data/'
