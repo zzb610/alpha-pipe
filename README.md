@@ -128,35 +128,33 @@ ExpressionFactor 通过公式计算因子值， CSVFactor 通过 csv 文件加�
 data_dir = './data/bin_data'
 
 # 分钟滚动因子
-ret_names = ['close to close','open to close']
 factor_config = dict(
-    market = 'zz800', # 股票池 中证800
+    market = 'small_sample', # 股票池 中证800
     start_time = '2017-01-01', # 开始时间
-    end_time = '2018-06-30', # 结束时间
+    end_time = '2017-01-05', # 结束时间
     freq='min', # 滚动频率 1分钟
-    factor_exp = 'Corr($open, $volume, 240)', # 过去240分钟的open与volume的相关性
-    ret_exps = ['Ref($close, -1)/$close - 1', 'Ref($open, -1)/$close - 1'], # 收益计算公式，注意目前收益仍是日频滚动的
+    factor_exp = 'Corr($open, $volume, 240)', # 过去240分钟的open与volume的相关系数
+    ret_exps = ['Ref($close_10, -1)/$close_230 - 1', 'Ref($open, -5)/$close - 1'], # 收益计算公式，注意目前仍然是日频滚动的
     ret_names = ret_names, # 收益的名称
     provider_uri =  data_dir, # 数据库路径
-    region = REG_CN # A股
 )
 
 min_factor = ExpressionFactor(**factor_config) ## 创建ExpressionFactor对象
 min_factor.factor_data() # 获取因子值的接口 DataFrame
 
 # 日滚动因子
-ret_names = ['close to close','open to close']
+ 
 factor_config = dict(
     market = 'zz800',
     start_time = '2017-01-01',
     end_time = '2018-06-30',
     freq='day', # 滚动频率 1天
     factor_exp = '$close + $volume / 2',
-    ret_exps = ['Ref($close, -1)/$close - 1', 'Ref($open, -1)/$close - 1'], # 收益计算公式
+    ret_exps = ['Ref($close_10, -1)/$close_230 - 1', 'Ref($open, -5)/$close - 1'], # 收益计算公式
     ret_names = ret_names,
     provider_uri = data_dir,
-    region = REG_CN
 )
+
 
 day_factor = ExpressionFactor(**factor_config)
 day_factor.factor_data()
@@ -172,18 +170,19 @@ from alpha_pipe.analyzer.factor_analyzer import FactorAnalyzer
 from alpha_pipe.analyzer.factor_analyzer import FactorAnalyzer
 
 # 创建分析对象
-ret_names = ['close to close','open to close']
 analyzer_config = dict(
     quantiles = 5, # 分层数
-    periods = (1,1), # 收益计算周期、调仓周期
+    periods = periods, # 收益计算周期、调仓周期
     ret_names = ret_names, # 收益名称
     binning_by_group =  False, # 是否对每个组分别计算分位数
     zero_aware = False # 是否分别为正负因子值计算分位数
 )
-far = FactorAnalyzer(**test_config) 
+far = FactorAnalyzer(**analyzer_config) 
 
 # 设置因子值 注意不能是ExpressionFactor等Factor对象, 可以是他们factor_data() 接口返回的Dataframe因子值
-far.set_factor_data(factor_data) 
+# 注意高频因子需要低频化
+
+far.set_factor_data(day_factor_data) 
 
 ## 生成所有图表
 test_config = dict(
@@ -204,4 +203,5 @@ test_config = dict(
     std_bar=False
 )
 far.create_full_tear_sheet(**test_config) 
+
 ```

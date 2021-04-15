@@ -12,7 +12,7 @@ from scipy.stats import spearmanr, pearsonr, morestats
 
 from . import performance as perf, plotting as pl
 from .plot_utils import _use_chinese, customize
-from .utils import Indicators, convert_to_forward_returns_columns, ensure_tuple, ignore_warning, quantize_factor
+from .utils import Indicators, convert_to_forward_returns_columns, ensure_tuple, ignore_warning, quantize_factor, rate_of_returns
 from .tears import GridFigure
 
 import matplotlib.pyplot as plt
@@ -649,6 +649,15 @@ class FactorAnalyzer(object):
             by_date=False, by_group=by_group,
             demeaned=demeaned, group_adjust=group_adjust,
         )
+        
+        # from IPython.display import display
+        # display(mean_return_by_quantile)
+
+        for name, period in zip(self._ret_names, self._periods):
+            mean_return_by_quantile['return({})'.format(name)] = mean_return_by_quantile['return({})'.format(name)].apply(rate_of_returns, period=period)
+
+        # from IPython.display import display
+        # display(mean_return_by_quantile)
 
         pl.plot_quantile_returns_bar(
             mean_return_by_quantile, by_group=by_group, ylim_percentiles=None

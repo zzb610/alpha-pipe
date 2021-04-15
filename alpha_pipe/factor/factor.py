@@ -87,7 +87,7 @@ class ExpressionFactor(BaseFactor):
             factors_ret = self._data_provider.features(instruments=instruments, fields=([self._factor_exp, '$group'] + [
                 ret_exp for ret_exp in self._ret_exps]), start_time=self._start_time, end_time=self._end_time, freq=self._freq)
 
-        factors_ret = factors_ret.rename(columns={self._factor_exp: 'factor'})
+        factors_ret = factors_ret.rename(columns={self._factor_exp: 'factor', '$group':'group'})
         factors_ret = factors_ret.rename(columns={exp: 'return({})'.format(
             name) for exp, name in zip(self._ret_exps, self._ret_names)})
 

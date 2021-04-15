@@ -840,6 +840,8 @@ def get_clean_factor_and_forward_returns(factor,
 
     return factor_data
 
+def rate_of_returns(ret, period):
+    return ((np.nansum(ret) + 1)**(1. / period)) - 1
 
 def rate_of_return(period_ret, base_period):
     """

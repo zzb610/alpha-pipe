@@ -5,7 +5,7 @@ from alpha_pipe.factor.factor import ExpressionFactor
 from alpha_pipe.analyzer.factor_analyzer import FactorAnalyzer
  
 # %%
-data_dir = './data/bin_data'
+data_dir = './data/bin_data/'
 ret_names = ['隔夜收益','五天收益']
 periods = (1,5)
  
@@ -30,7 +30,7 @@ periods = (1,5)
 # 日滚动因子
  
 factor_config = dict(
-    market = 'zz800',
+    market = 'all',
     start_time = '2017-01-01',
     end_time = '2018-06-30',
     freq='day', # 滚动频率 1天
