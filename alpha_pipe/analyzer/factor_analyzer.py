@@ -832,6 +832,7 @@ class FactorAnalyzer(object):
             cum_ret.plot(ax=ax, lw=3, alpha=0.6, label=name)
         ax.set(title='最高层最低层多空对冲收益')
         ax.axhline(1.0, linestyle='-', color='black', lw=1)
+        ax.legend()
 
     @customize
     def plot_cumulative_returns_by_quantile(self, demeaned, group_adjust):
@@ -870,7 +871,7 @@ class FactorAnalyzer(object):
             indicators = pd.DataFrame()
             print('{} 收益指标 {} 天调仓'.format(name, period))
             for col in ret.columns:
-                indicator = Indicators(ret[col], period)
+                indicator = Indicators(ret[col])
                 indicator.name = col
                 indicators = indicators.append(indicator)
             display(indicators)

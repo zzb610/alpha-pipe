@@ -1055,7 +1055,7 @@ def ensure_tuple(x):
         return tuple(x)
 
 
-def Indicators(value, period):
+def Indicators(value):
 
     columns = ['总收益', '年化收益', '波动率', '夏普比', '最大回撤', '卡玛比率', '日胜率', '盈亏比']
 
@@ -1075,12 +1075,12 @@ def Indicators(value, period):
 
     AllRtn = round(value[-1]*100-100, 2)
 
-    AulRtn = round(pow(value[-1], 250/period/len(value))*100-100, 2)
+    AulRtn = round(pow(value[-1], 250/len(value))*100-100, 2)
 
     value = pd.Series(value)
     Rtns = value.pct_change(1).dropna()
 
-    Volity = round(sqrt(Rtns.var()*250 /period)*100, 2)
+    Volity = round(sqrt(Rtns.var()*250)*100, 2)
     SpRatio = round((AulRtn-4)/Volity, 2)
     MaxBack = round(MaxBack(value)*100, 2)
     CmRatio = round(AulRtn/MaxBack, 2)

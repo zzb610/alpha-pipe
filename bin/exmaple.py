@@ -37,13 +37,13 @@ periods = (1,5)
  
 
 # 日滚动因子
- 
+exp = 'Mean($(high - If($close>$open, $close, $open)) / Mean($high-If($close>$open, $close, $open), 5), 20)'
 factor_config = dict(
     market = 'all',
     start_time = '2017-01-01',
-    end_time = '2018-06-30',
+    end_time = '2020-06-30',
     freq='day', # 滚动频率 1天
-    factor_exp = '$close + $volume / 2',
+    factor_exp = exp,
     ret_exps = ['Ref($close_10, -1)/$close_230 - 1', 'Ref($open, -5)/$close - 1'], # 收益计算公式
     ret_names = ret_names,
     provider_uri = data_dir,
