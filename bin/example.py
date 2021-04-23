@@ -37,7 +37,7 @@ periods = (1,5)
  
 
 # 日滚动因子
-exp = 'Mean($(high - If($close>$open, $close, $open)) / Mean($high-If($close>$open, $close, $open), 5), 20)'
+exp = 'Mean(($high - If($close>$open, $close, $open)) / Mean($high-If($close>$open, $close, $open), 5), 20)'
 factor_config = dict(
     market = 'all',
     start_time = '2017-01-01',
