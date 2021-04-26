@@ -12,7 +12,7 @@ from scipy.stats import spearmanr, pearsonr, morestats
 
 from . import performance as perf, plotting as pl
 from .plot_utils import _use_chinese, customize
-from .utils import Indicators, convert_to_forward_returns_columns, ensure_tuple, ignore_warning, quantize_factor, rate_of_returns
+from .utils import Indicators, ensure_tuple, ignore_warning, quantize_factor, rate_of_returns
 from .tears import GridFigure
 
 import matplotlib.pyplot as plt

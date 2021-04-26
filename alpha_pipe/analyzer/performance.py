@@ -9,10 +9,11 @@ from scipy import stats
 from statsmodels.regression.linear_model import OLS
 from statsmodels.tools.tools import add_constant
 from . import utils
- 
+from .utils import get_forward_returns_columns, demean_forward_returns
+
 
 def factor_information_coefficient(
-    factor_data:pd.DataFrame, group_adjust=False, by_group=False, method=stats.spearmanr
+    factor_data: pd.DataFrame, group_adjust=False, by_group=False, method=stats.spearmanr
 ):
     """计算因子值与远期收益的相关系数(IC)
 
@@ -39,7 +40,7 @@ def factor_information_coefficient(
     """
     def src_ic(group):
         f = group['factor']
-        _ic = group[utils.get_forward_returns_columns(factor_data.columns)] \
+        _ic = group[get_forward_returns_columns(factor_data.columns)] \
             .apply(lambda x: method(x, f)[0])
         return _ic
 
@@ -48,7 +49,7 @@ def factor_information_coefficient(
     grouper = [factor_data.index.get_level_values('date')]
 
     if group_adjust:
-        factor_data = utils.demean_forward_returns(factor_data, grouper + ['group'])
+        factor_data = demean_forward_returns(factor_data, grouper + ['group'])
     if by_group:
         grouper.append('group')
 
@@ -58,36 +59,28 @@ def factor_information_coefficient(
     return ic
 
 
-def mean_information_coefficient(
-    factor_data,
-    group_adjust=False,
-    by_group=False,
-    by_time=None,
-    method=stats.spearmanr
-):
-    """
-    根据不同分组求因子 IC 均值.
+def mean_information_coefficient(factor_data: pd.DataFrame, group_adjust=False, by_group=False, by_time=None, method=stats.spearmanr):
+    """因子分组IC的均值
 
-    参数
+    Parameters
     ----------
-    factor_data : pd.DataFrame - MultiIndex
-        一个 DataFrame, index 为日期 (level 0) 和资产(level 1) 的 MultiIndex,
-        values 包括因子的值, 各期因子远期收益, 因子分位数,
-        因子分组(可选), 因子权重(可选)
-    group_adjust : bool
-        是否使用分组去均值后的因子远期收益计算 IC.
-    by_group : bool
-        是否分组计算 IC.
+    factor_data : pd.DataFrame
+        标准因子数据, index 为 date (level 0) 和 asset (level 1) 
+        factor-因子值 return(xxx)-远期收益 factor_quantile-因子值分位数
+        group-因子分组(可选) weight-因子权重(可选)
+    group_adjust : bool, optional
+        是否使用分组去均值后的因子远期收益计算IC, by default False
+    by_group : bool, optional
+        是否使用分组去均值后的因子远期收益计算 IC., by default False
     by_time : str (pd time_rule), optional
-        根据相应的时间频率计算 IC 均值
-        时间频率参见 http://pandas.pydata.org/pandas-docs/stable/timeseries.html
+        根据相应的时间频率计算 IC 均值, by default None
+    method : optional
+        计算IC的方法, by default stats.spearmanr
 
-    返回值
+    Returns
     -------
-    ic : pd.DataFrame
-        根据不同分组求出的因子 IC 均值序列
+    根据不同分组求出的因子 IC 均值序列
     """
-
     ic = factor_information_coefficient(
         factor_data, group_adjust, by_group, method=method
     )
@@ -106,11 +99,6 @@ def mean_information_coefficient(
 
     return ic
 
-
-def factor_weights(factor_data,
-                   demeaned=True,
-                   group_adjust=False,
-                   equal_weight=False):
     """
     Computes asset weights by factor values and dividing by the sum of their
     absolute value (achieving gross leverage of 1). Positive factor values will
@@ -147,8 +135,26 @@ def factor_weights(factor_data,
         Assets weighted by factor value.
     """
 
+
+def factor_weights(factor_data, demeaned=True, group_adjust=False, equal_weight=False):
+    """获取因子加权的权重，权重为去均值的因子除以其绝对值之和 (实现总杠杆率为1).
+
+    Parameters
+    ----------
+    factor_data : pd.DataFrame
+        标准因子数据, index 为 date (level 0) 和 asset (level 1) 
+        factor-因子值 return(xxx)-远期收益 factor_quantile-因子值分位数
+        group-因子分组(可选) weight-因子权重(可选)
+    demeaned : bool, optional
+        因子分析是否基于一个多空组合? 如果是 True, 则计算权重时因子值需要去均值, by default True
+    group_adjust : bool, optional
+        因子分析是否基于一个分组(行业)中性的组合? 如果是 True, 则计算权重时因子值需要根据分组和日期去均值, by default False
+    equal_weight : bool, optional
+        是否等权, by default False
+    """
     def to_weights(group, _demeaned, _equal_weight):
 
+        # 等权
         if _equal_weight:
             group = group.copy()
 
@@ -156,6 +162,7 @@ def factor_weights(factor_data,
                 # top assets positive weights, bottom ones negative
                 group = group - group.median()
 
+            # 因子值正权重都为1 因子值负权重都为-1
             negative_mask = group < 0
             group[negative_mask] = -1.0
             positive_mask = group > 0
@@ -168,6 +175,7 @@ def factor_weights(factor_data,
                 if positive_mask.any():
                     group[positive_mask] /= positive_mask.sum()
 
+        # 不等权
         elif _demeaned:
             group = group - group.mean()
 
@@ -185,12 +193,6 @@ def factor_weights(factor_data,
 
     return weights
 
-
-def factor_returns(factor_data,
-                   demeaned=True,
-                   group_adjust=False,
-                   equal_weight=False,
-                   by_asset=False):
     """
     Computes period wise returns for portfolio weighted by factor
     values.
@@ -221,12 +223,37 @@ def factor_returns(factor_data,
         Period wise factor returns
     """
 
-    weights = \
-        factor_weights(factor_data, demeaned, group_adjust, equal_weight)
 
-    weighted_returns = \
-        factor_data[utils.get_forward_returns_columns(factor_data.columns)] \
-        .multiply(weights, axis=0)
+def factor_returns(factor_data,
+                   demeaned=True,
+                   group_adjust=False,
+                   equal_weight=False,
+                   by_asset=False):
+    """[summary]
+
+    Parameters
+    ----------
+    factor_data : pd.DataFrame
+        标准因子数据, index 为 date (level 0) 和 asset (level 1) 
+        factor-因子值 return(xxx)-远期收益 factor_quantile-因子值分位数
+        group-因子分组(可选) weight-因子权重(可选)
+    demeaned : bool, optional
+        因子分析是否基于一个多空组合? 如果是 True, 则计算权重时因子值需要去均值, by default True
+    group_adjust : bool, optional
+        因子分析是否基于一个分组(行业)中性的组合? 如果是 True, 则计算权重时因子值需要根据分组和日期去均值, by default False
+    equal_weight : bool, optional
+        是否等权, by default False
+    by_asset : bool, optional
+        是否按每个标的展示加权后的收益, by default False
+
+    Returns
+    -------
+    每期零风险暴露的多空组合收益
+    """
+    weights = factor_weights(factor_data, demeaned, group_adjust, equal_weight)
+
+    weighted_returns = factor_data[get_forward_returns_columns(
+        factor_data.columns)].multiply(weights, axis=0)
 
     if by_asset:
         returns = weighted_returns
@@ -242,50 +269,38 @@ def factor_alpha_beta(factor_data,
                       demeaned=True,
                       group_adjust=False,
                       equal_weight=False):
-    """
-    Compute the alpha (excess returns), alpha t-stat (alpha significance),
-    and beta (market exposure) of a factor. A regression is run with
-    the period wise factor universe mean return as the independent variable
-    and mean period wise return from a portfolio weighted by factor values
-    as the dependent variable.
+    """计算因子的alpha beata
+    使用每期平均远期收益作为自变量(视为市场组合收益)
+    因子值加权平均的远期收益作为因变量(视为因子收益), 进行回归.
 
     Parameters
     ----------
-    factor_data : pd.DataFrame - MultiIndex
-        A MultiIndex DataFrame indexed by date (level 0) and asset (level 1),
-        containing the values for a single alpha factor, forward returns for
-        each period, the factor quantile/bin that factor value belongs to, and
-        (optionally) the group the asset belongs to.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
-    periods: add for alpha_pipe
-    returns : pd.DataFrame, optional
-        Period wise factor returns. If this is None then it will be computed
-        with 'factor_returns' function and the passed flags: 'demeaned',
-        'group_adjust', 'equal_weight'
-    demeaned : bool
-        Control how to build factor returns used for alpha/beta computation
-        -- see performance.factor_return for a full explanation
-    group_adjust : bool
-        Control how to build factor returns used for alpha/beta computation
-        -- see performance.factor_return for a full explanation
+    factor_data : pd.DataFrame
+        标准因子数据, index 为 date (level 0) 和 asset (level 1) 
+        factor-因子值 return(xxx)-远期收益 factor_quantile-因子值分位数
+        group-因子分组(可选) weight-因子权重(可选)
+    periods : int
+        调仓周期/收益计算周期
+    returns : optional
+        因子收益序列, by default None
+    demeaned : bool, optional
+        因子分析是否基于一个多空组合? 如果是 True, 则计算权重时因子值需要去均值, by default True
+    group_adjust : bool, optional
+        因子分析是否基于一个分组(行业)中性的组合? 如果是 True, 则计算权重时因子值需要根据分组和日期去均值, by default False
     equal_weight : bool, optional
-        Control how to build factor returns used for alpha/beta computation
-        -- see performance.factor_return for a full explanation
+        是否等权, by default False
 
     Returns
     -------
-    alpha_beta : pd.Series
-        A list containing the alpha, beta, a t-stat(alpha)
-        for the given factor and forward returns.
+    一个包含 alpha, beta, a t-统计量(alpha) 的序列
     """
 
     if returns is None:
-        returns = \
-            factor_returns(factor_data, demeaned, group_adjust, equal_weight)
+        returns = factor_returns(
+            factor_data, demeaned, group_adjust, equal_weight)
 
-    universe_ret = factor_data.groupby(level='date')[
-        utils.get_forward_returns_columns(factor_data.columns)] \
-        .mean().loc[returns.index]
+    universe_ret = factor_data.groupby(level='date')[get_forward_returns_columns(
+        factor_data.columns)].mean().loc[returns.index]
 
     if isinstance(returns, pd.Series):
         returns.name = universe_ret.columns.values[0]
@@ -307,13 +322,15 @@ def factor_alpha_beta(factor_data,
             alpha_beta.loc['Ann. alpha', ret_type] = np.nan
             alpha_beta.loc['beta', ret_type] = np.nan
         else:
-            freq_adjust = pd.Timedelta('250Days') / pd.Timedelta('{}D'.format(periods[i]))
+            freq_adjust = pd.Timedelta(
+                '250Days') / pd.Timedelta('{}D'.format(periods[i]))
 
             alpha_beta.loc['Ann. alpha', ret_type] = \
                 (1 + alpha) ** freq_adjust - 1
             alpha_beta.loc['beta', ret_type] = beta
 
     return alpha_beta
+
 
 def cumulative_returns(returns, period):
     """计算累积收益
@@ -336,7 +353,7 @@ def cumulative_returns(returns, period):
 
     if period == 1:
         return returns.add(1).cumprod()
-    
+
     # 构建 N 个交错的投资组合
     def split_portfolio(ret):
         return pd.DataFrame(np.diag(ret))
@@ -345,13 +362,14 @@ def cumulative_returns(returns, period):
         np.arange(len(returns.index)) // period, axis=0
     ).apply(split_portfolio)
     sub_portfolios.index = returns.index
-    
+
     # 将 period 期收益转换为 1 期收益, 方便计算累积收益
     # 按照年化收益相等进行反解
     def rate_of_returns(ret, period):
         return ((np.nansum(ret) + 1)**(1. / period)) - 1
 
-    sub_portfolios = sub_portfolios.rolling(window=period,min_periods=1,center=False).apply(rate_of_returns, False, args=(period,))
+    sub_portfolios = sub_portfolios.rolling(window=period, min_periods=1, center=False).apply(
+        rate_of_returns, False, args=(period,))
     sub_portfolios = sub_portfolios.add(1).cumprod()
 
     # 求 period 个投资组合累积收益均值
@@ -600,7 +618,7 @@ def quantile_turnover(quantile_factor, quantile, period=1):
     new_names = (quant_name_sets - name_shifted).dropna()
     quant_turnover = new_names.apply(
         lambda x: len(x)) / quant_name_sets.apply(lambda x: len(x))
-    quant_turnover.name =  quantile
+    quant_turnover.name = quantile
     return quant_turnover
 
 
