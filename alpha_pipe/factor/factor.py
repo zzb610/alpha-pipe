@@ -71,10 +71,12 @@ class ExpressionFactor(BaseFactor):
             
             factors_values = factors_values.reset_index()
             ret_values = ret_values.reset_index().drop(columns=['date'])
-
+          
+ 
             print('因子计算完成! 耗时 {}'.format(dt.datetime.now() - start_time))
             self.raw_data = factors_values
-
+            
+        
             print('开始拼接收益...')
             start_time = dt.datetime.now()
             factors_ret = pd.merge(factors_values, ret_values, how='inner', on=[

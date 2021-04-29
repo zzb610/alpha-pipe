@@ -13,7 +13,7 @@ from scipy.stats import spearmanr, pearsonr, morestats
 from . import performance as perf, plotting as pl
 from .plot_utils import _use_chinese, customize
 from .utils import Indicators, ensure_tuple, ignore_warning, quantize_factor, rate_of_returns
-from .tears import GridFigure
+from .plot_utils import GridFigure
 
 import matplotlib.pyplot as plt
 
@@ -925,6 +925,13 @@ class FactorAnalyzer(object):
             full_dates=pd.to_datetime(
                 self.factor.index.get_level_values('date').unique())
         )
+    
+    def plot_factor_value(self):
+        def _mean_factor(group):
+            return group['factor'].mean()
+        qmean = self._clean_factor_data.groupby('factor_quantile').apply(_mean_factor)
+        qmean.plot.bar(title='mean factor value by quantile')
+        plt.show()
 
     def create_summary_tear_sheet(self, demeaned, group_adjust):
         """因子值特征分析
@@ -1082,6 +1089,7 @@ class FactorAnalyzer(object):
         - False: 不显示标准差
         """
         self.plot_quantile_statistics_table()
+        self.plot_factor_value()
         print("\n-------------------------\n")
         self.plot_returns_table(demeaned=demeaned, group_adjust=group_adjust)
         self.plot_quantile_returns_bar(by_group=False,
@@ -1098,6 +1106,7 @@ class FactorAnalyzer(object):
         self.plot_cumulative_returns_by_quantile(
             demeaned=demeaned,
             group_adjust=group_adjust)
+
         self.plot_cumulative_returns_indicators(demeaned=demeaned, group_adjust=group_adjust)
         self.plot_mean_quantile_returns_spread_time_series(demeaned=demeaned,
                                                            group_adjust=group_adjust)

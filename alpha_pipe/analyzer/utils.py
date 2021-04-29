@@ -126,6 +126,7 @@ def quantize_factor(factor_data,
 
     def quantile_calc(x, _quantiles, _bins, _zero_aware, _no_raise):
         try:
+            x = x.rank(method='first')
             if _quantiles is not None and _bins is None and not _zero_aware:
                 return pd.qcut(x, _quantiles, labels=False) + 1
             elif _quantiles is not None and _bins is None and _zero_aware:
